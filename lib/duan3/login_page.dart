@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import 'settings_page.dart';
+import 'user_database.dart'; // Import bộ nhớ tài khoản
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,14 +25,49 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _submitLogin() {
-  if (_formKey.currentState!.validate()) {
-    // Chuyển sang màn hình Cài đặt và thay thế trang hiện tại (không bấm back lại được login)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const SettingsPage()),
-    );
+    if (_formKey.currentState!.validate()) {
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      // 1. Kiểm tra tài khoản đã đăng ký chưa
+      if (!UserDatabase.isEmailRegistered(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tài khoản chưa được đăng ký! Vui lòng bấm Đăng ký.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // 2. Kiểm tra mật khẩu có chính xác không
+      if (!UserDatabase.login(email, password)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mật khẩu không chính xác!'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // 3. Đăng nhập thành công -> Chuyển sang màn hình Cài đặt
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đăng nhập thành công!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingsPage()),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -77,10 +113,10 @@ class _LoginPageState extends State<LoginPage> {
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Vui lòng nhập Email';
                       }
-                      if (!value.contains('@')) {
+                      if (!value.contains('@') || !value.contains('.')) {
                         return 'Email không hợp lệ';
                       }
                       return null;
@@ -116,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Hàng chứa nút "Đăng ký" bên trái & "Quên mật khẩu?" bên phải
+                  // Hàng nút Đăng ký & Quên mật khẩu
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -160,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Đường kẻ có chữ "hoặc"
+                  // Đường kẻ "hoặc"
                   Row(
                     children: const [
                       Expanded(child: Divider(thickness: 1)),

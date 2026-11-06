@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'user_database.dart'; // Import bộ nhớ tài khoản
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -8,7 +9,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // 1. Dùng Form với GlobalKey<FormState>
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
@@ -18,8 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool _isObscurePassword = true;
   bool _isObscureConfirm = true;
-
-  // 4. Trạng thái ô tích đồng ý điều khoản
   bool _isAgreed = false;
 
   @override
@@ -33,10 +31,33 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _submitRegister() {
     if (_formKey.currentState!.validate()) {
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      // Lưu tài khoản vào cơ sở dữ liệu tạm thời
+      bool isSuccess = UserDatabase.register(email, password);
+
+      if (!isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email này đã được đăng ký trước đó!'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Thông báo thành công và chuyển về màn hình đăng nhập
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng ký tài khoản thành công!')),
+        const SnackBar(
+          content: Text('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-      Navigator.pop(context); // Quay lại màn hình Đăng nhập
+
+      Navigator.pop(context);
     }
   }
 
@@ -44,8 +65,6 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-
-      // 1. Thanh tiêu đề có nút quay lại
       appBar: AppBar(
         title: const Text(
           'Tạo tài khoản',
@@ -68,7 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 const SizedBox(height: 12),
 
-                // 2. Ô nhập 1: Họ tên (Kiểm tra không rỗng)
+                // Họ tên
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
@@ -84,7 +103,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Ô nhập 2: Email (Kiểm tra đúng định dạng)
+                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -104,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Ô nhập 3: Mật khẩu (Kiểm tra từ 8 ký tự)
+                // Mật khẩu
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _isObscurePassword,
@@ -132,7 +151,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Ô nhập 4: Nhập lại mật khẩu (Kiểm tra phải trùng khớp)
+                // Nhập lại mật khẩu
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _isObscureConfirm,
@@ -160,7 +179,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // 4. Ô tích đồng ý điều khoản
+                // Ô tích điều khoản
                 Row(
                   children: [
                     Checkbox(
@@ -182,7 +201,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 4. Nút Đăng ký (bị vô hiệu hóa nếu chưa tích _isAgreed)
+                // Nút Đăng ký
                 ElevatedButton(
                   onPressed: _isAgreed ? _submitRegister : null,
                   style: ElevatedButton.styleFrom(
@@ -201,14 +220,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // 5. Dòng chữ cuối màn hình dẫn sang trang Đăng nhập
+                // Dẫn sang Đăng nhập
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text('Đã có tài khoản?'),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context); // Trở về trang Đăng nhập
+                        Navigator.pop(context);
                       },
                       child: const Text(
                         'Đăng nhập ngay',
