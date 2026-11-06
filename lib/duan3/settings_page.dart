@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import 'user_database.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -9,16 +10,19 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Trạng thái Bật/Tắt nhóm 1
   bool _receiveNotifications = true;
-  bool _darkMode = false; // Thêm chế độ tối
-  bool _rememberLogin = true;
+  bool _darkMode = false;
+  late bool _rememberLogin;
 
-  // Trạng thái nhóm 2
   String _selectedLanguage = 'Tiếng Việt';
   String _selectedFontSize = 'Vừa';
 
-  // 1. Tính toán tỷ lệ cỡ chữ linh hoạt
+  @override
+  void initState() {
+    super.initState();
+    _rememberLogin = UserDatabase.rememberLogin;
+  }
+
   double get _fontScale {
     switch (_selectedFontSize) {
       case 'Nhỏ':
@@ -37,7 +41,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // 2. Từ điển ngôn ngữ cho giao diện Cài đặt
   final Map<String, Map<String, String>> _localizedTexts = {
     'Tiếng Việt': {
       'title': 'Cài đặt',
@@ -45,6 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'notif': 'Nhận thông báo',
       'darkMode': 'Chế độ tối',
       'remember': 'Nhớ đăng nhập',
+      'lastLogin': 'Lần đăng nhập gần nhất',
       'group2': 'ỨNG DỤNG',
       'lang': 'Ngôn ngữ',
       'fontSize': 'Cỡ chữ',
@@ -63,6 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'notif': 'Receive notifications',
       'darkMode': 'Dark mode',
       'remember': 'Remember login',
+      'lastLogin': 'Last login time',
       'group2': 'APPLICATION',
       'lang': 'Language',
       'fontSize': 'Font size',
@@ -81,6 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'notif': 'Recevoir des notifications',
       'darkMode': 'Mode sombre',
       'remember': 'Se souvenir de moi',
+      'lastLogin': 'Dernière connexion',
       'group2': 'APPLICATION',
       'lang': 'Langue',
       'fontSize': 'Taille de police',
@@ -99,6 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'notif': '通知を受け取る',
       'darkMode': 'ダークモード',
       'remember': 'ログイン状態を保存',
+      'lastLogin': '最終ログイン日時',
       'group2': 'アプリ',
       'lang': '言語',
       'fontSize': 'フォントサイズ',
@@ -113,12 +120,10 @@ class _SettingsPageState extends State<SettingsPage> {
     },
   };
 
-  // Hàm dịch nhanh dựa trên ngôn ngữ đang chọn
   String _getText(String key) {
     return _localizedTexts[_selectedLanguage]?[key] ?? _localizedTexts['Tiếng Việt']![key]!;
   }
 
-  // Danh sách tùy chọn cỡ chữ thích ứng theo ngôn ngữ
   List<String> get _fontSizeOptions {
     if (_selectedLanguage == 'English') {
       return ['Small', 'Medium', 'Large', 'Extra Large'];
@@ -126,7 +131,6 @@ class _SettingsPageState extends State<SettingsPage> {
     return ['Nhỏ', 'Vừa', 'Lớn', 'Rất lớn'];
   }
 
-  // Hàm hiển thị BottomSheet chọn giá trị
   void _showSelectionBottomSheet({
     required String title,
     required List<String> options,
@@ -189,7 +193,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Hàm hiển thị Hộp thoại Đăng xuất
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -237,7 +240,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Phối màu giao diện linh hoạt theo Chế độ tối
     final backgroundColor = _darkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final cardColor = _darkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = _darkMode ? Colors.white : Colors.black87;
@@ -277,7 +279,6 @@ class _SettingsPageState extends State<SettingsPage> {
             color: cardColor,
             child: Column(
               children: [
-                // 1. Nhận thông báo
                 SwitchListTile(
                   title: Text(
                     _getText('notif'),
@@ -293,7 +294,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 Divider(height: 1, indent: 16, color: _darkMode ? Colors.grey.shade800 : Colors.grey.shade200),
 
-                // 2. CHẾ ĐỘ TỐI (MỚI BỔ SUNG)
                 SwitchListTile(
                   title: Text(
                     _getText('darkMode'),
@@ -303,27 +303,33 @@ class _SettingsPageState extends State<SettingsPage> {
                   activeColor: Colors.blue,
                   onChanged: (value) {
                     setState(() {
-                      _darkMode = value; // Cập nhật màu giao diện ngay lập tức
+                      _darkMode = value;
                     });
                   },
                 ),
                 Divider(height: 1, indent: 16, color: _darkMode ? Colors.grey.shade800 : Colors.grey.shade200),
 
-                // 3. Nhớ đăng nhập
+                // Nhớ đăng nhập và hiển thị thời gian đăng nhập gần nhất
                 SwitchListTile(
                   title: Text(
                     _getText('remember'),
                     style: TextStyle(color: textColor, fontSize: 15 * _fontScale),
                   ),
+                  subtitle: _rememberLogin
+                      ? Text(
+                          '${_getText('lastLogin')}: ${UserDatabase.getLastLoginFormatted()}',
+                          style: TextStyle(color: subtitleColor, fontSize: 12 * _fontScale),
+                        )
+                      : null,
                   value: _rememberLogin,
                   activeColor: Colors.blue,
                   onChanged: (value) {
                     setState(() {
                       _rememberLogin = value;
+                      UserDatabase.rememberLogin = value;
                     });
                   },
                 ),
-                // Mục cuối không có đường kẻ
               ],
             ),
           ),
@@ -346,7 +352,6 @@ class _SettingsPageState extends State<SettingsPage> {
             color: cardColor,
             child: Column(
               children: [
-                // Thay đổi Ngôn ngữ
                 ListTile(
                   title: Text(
                     _getText('lang'),
@@ -365,7 +370,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       onSelect: (val) {
                         setState(() {
                           _selectedLanguage = val;
-                          // Tự động chuyển đổi nhãn cỡ chữ mặc định phù hợp với ngôn ngữ
                           if (val == 'English' && _selectedFontSize == 'Vừa') {
                             _selectedFontSize = 'Medium';
                           } else if (val == 'Tiếng Việt' && _selectedFontSize == 'Medium') {
@@ -378,7 +382,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 Divider(height: 1, indent: 16, color: _darkMode ? Colors.grey.shade800 : Colors.grey.shade200),
 
-                // Thay đổi Cỡ chữ
                 ListTile(
                   title: Text(
                     _getText('fontSize'),
@@ -400,7 +403,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 Divider(height: 1, indent: 16, color: _darkMode ? Colors.grey.shade800 : Colors.grey.shade200),
 
-                // Về ứng dụng
                 ListTile(
                   title: Text(
                     _getText('about'),
@@ -425,7 +427,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 32),
 
-          // Nút Đăng xuất
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton(

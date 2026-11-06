@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import 'settings_page.dart';
-import 'user_database.dart'; // Import bộ nhớ tài khoản
+import 'user_database.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +18,15 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscure = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Tự động điền email nếu bật tính năng Nhớ đăng nhập
+    if (UserDatabase.rememberLogin && UserDatabase.currentUserEmail != null) {
+      _emailController.text = UserDatabase.currentUserEmail!;
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -29,7 +38,6 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text;
       final password = _passwordController.text;
 
-      // 1. Kiểm tra tài khoản đã đăng ký chưa
       if (!UserDatabase.isEmailRegistered(email)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -41,7 +49,6 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // 2. Kiểm tra mật khẩu có chính xác không
       if (!UserDatabase.login(email, password)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -53,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // 3. Đăng nhập thành công -> Chuyển sang màn hình Cài đặt
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Đăng nhập thành công!'),
@@ -104,7 +110,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Ô nhập Email
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -124,7 +129,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Ô nhập Mật khẩu
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _isObscure,
@@ -152,7 +156,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Hàng nút Đăng ký & Quên mật khẩu
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -178,7 +181,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Nút Đăng nhập
                   ElevatedButton(
                     onPressed: _submitLogin,
                     style: ElevatedButton.styleFrom(
@@ -196,7 +198,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Đường kẻ "hoặc"
                   Row(
                     children: const [
                       Expanded(child: Divider(thickness: 1)),
@@ -212,7 +213,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Nút Google
                   OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
